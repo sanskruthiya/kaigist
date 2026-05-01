@@ -1,15 +1,23 @@
 <script lang="ts">
-	import { ArrowLeft, ArrowRight, Rocket, Sparkles } from 'lucide-svelte';
+	import { ArrowLeft, ArrowRight, Rocket, Sparkles, AlertTriangle } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
+	import { LLM_PROVIDERS, apiKeys, getProviderForModel } from '$lib/llm';
 
 	let currentStep = $state(1);
 	const totalSteps = 3;
+	let selectedModel = $state('gemini-2.5-flash');
 
 	const stepLabels: Array<'setup_step_theme' | 'setup_step_personas' | 'setup_step_settings'> = [
 		'setup_step_theme',
 		'setup_step_personas',
 		'setup_step_settings'
 	];
+
+	const hasApiKeyForModel = $derived(() => {
+		const provider = getProviderForModel(selectedModel);
+		if (!provider) return false;
+		return !!$apiKeys[provider.id];
+	});
 </script>
 
 <div class="max-w-2xl mx-auto px-4 py-8">
@@ -133,15 +141,24 @@
 				</label>
 				<select
 					id="model"
+					bind:value={selectedModel}
 					class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
 				>
-					<option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-					<option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-					<option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
-					<option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
-					<option value="gpt-4o">GPT-4o</option>
-					<option value="gpt-4o-mini">GPT-4o Mini</option>
+					{#each LLM_PROVIDERS as provider}
+						<optgroup label={provider.name}>
+							{#each provider.models as model}
+								<option value={model.id}>{model.name}</option>
+							{/each}
+						</optgroup>
+					{/each}
 				</select>
+
+				{#if !hasApiKeyForModel()}
+					<div class="flex items-center gap-2 mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+						<AlertTriangle size={16} />
+						<span>{$t('error_no_api_key')}</span>
+					</div>
+				{/if}
 			</div>
 
 			<div class="flex justify-between">
@@ -154,7 +171,7 @@
 				</button>
 				<a
 					href="/discussion"
-					class="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+					class="flex items-center gap-2 px-6 py-3 font-medium rounded-lg transition-colors {hasApiKeyForModel() ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-200 text-gray-400 pointer-events-none'}"
 				>
 					<Rocket size={18} />
 					{$t('setup_start_discussion')}
