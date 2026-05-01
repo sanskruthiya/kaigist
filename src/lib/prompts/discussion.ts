@@ -146,6 +146,34 @@ export interface ParsedUtterance {
 	content: string;
 }
 
+function tryRecoverTruncatedJson(text: string): ParsedUtterance | null {
+	// Extract speaker from "speaker": "..." pattern
+	const speakerMatch = text.match(/"speaker"\s*:\s*"([^"]+)"/);
+	if (!speakerMatch) return null;
+
+	// Extract content - may be truncated (missing closing quote)
+	const contentMatch = text.match(/"content"\s*:\s*"((?:[^"\\]|\\.)*)(")?/);
+	if (!contentMatch) return null;
+
+	const speaker = speakerMatch[1];
+	let content = contentMatch[1];
+
+	// Unescape JSON string escapes
+	try {
+		content = JSON.parse(`"${content}"`);
+	} catch {
+		// Use raw content if unescape fails
+	}
+
+	if (!speaker || !content || content.length < 10) return null;
+
+	console.warn('[parseDiscussion] Recovered truncated JSON:', { speaker, contentLen: content.length });
+	return {
+		speaker,
+		content: truncateUtterance(content)
+	};
+}
+
 export function parseDiscussionResponse(raw: string): ParsedUtterance {
 	if (!raw || !raw.trim()) {
 		throw new Error('Empty response from LLM');
@@ -159,7 +187,11 @@ export function parseDiscussionResponse(raw: string): ParsedUtterance {
 	}
 
 	const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+
+	// Fallback: try to recover truncated JSON (e.g. missing closing " and })
 	if (!jsonMatch) {
+		const recovered = tryRecoverTruncatedJson(cleaned);
+		if (recovered) return recovered;
 		const preview = raw.slice(0, 200).replace(/\n/g, '\\n');
 		throw new Error(`No JSON object found in response: "${preview}"`);
 	}
@@ -168,6 +200,9 @@ export function parseDiscussionResponse(raw: string): ParsedUtterance {
 	try {
 		parsed = JSON.parse(jsonMatch[0]);
 	} catch {
+		// Try recovering from malformed JSON (truncated mid-value)
+		const recovered = tryRecoverTruncatedJson(jsonMatch[0]);
+		if (recovered) return recovered;
 		const preview = jsonMatch[0].slice(0, 200).replace(/\n/g, '\\n');
 		throw new Error(`Invalid JSON in response: "${preview}"`);
 	}

@@ -108,7 +108,7 @@ export class DiscussionEngine {
 					s.setup.modelId,
 					{
 						messages: [{ role: 'user', content: prompt }],
-						maxTokens: 1024,
+						maxTokens: 2048,
 						temperature: 0.85
 					},
 					{
