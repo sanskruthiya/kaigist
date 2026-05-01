@@ -79,55 +79,73 @@ export class DiscussionEngine {
 	}
 
 	private async generateUtterance(round: number) {
-		const s = get(session);
-		if (!s) return;
+		const MAX_RETRIES = 2;
+		let lastError: Error | null = null;
 
-		const prompt = buildDiscussionPrompt({
-			theme: s.setup.theme,
-			direction: s.setup.direction,
-			personas: s.setup.personas,
-			utterances: s.utterances,
-			currentRound: round,
-			maxRounds: s.setup.rounds,
-			facilitatorComment: this.facilitatorComment,
-			locale: get(locale)
-		});
+		for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+			if (this.abortController?.signal.aborted) return;
 
-		this.facilitatorComment = '';
+			const s = get(session);
+			if (!s) return;
 
-		let fullResponse = '';
+			const prompt = buildDiscussionPrompt({
+				theme: s.setup.theme,
+				direction: s.setup.direction,
+				personas: s.setup.personas,
+				utterances: s.utterances,
+				currentRound: round,
+				maxRounds: s.setup.rounds,
+				facilitatorComment: attempt === 0 ? this.facilitatorComment : '',
+				locale: get(locale)
+			});
 
-		await sendMessage(
-			s.setup.modelId,
-			{
-				messages: [{ role: 'user', content: prompt }],
-				maxTokens: 1024,
-				temperature: 0.85
-			},
-			{
-				onToken: (token) => {
-					fullResponse += token;
-				},
-				onComplete: (_text, usage) => {
-					if (usage) {
-						this.totalUsage.inputTokens += usage.inputTokens;
-						this.totalUsage.outputTokens += usage.outputTokens;
-						this.callbacks.onUsageUpdate({ ...this.totalUsage });
-					}
-				},
-				onError: (err) => {
-					throw err;
+			if (attempt === 0) this.facilitatorComment = '';
+
+			let fullResponse = '';
+
+			try {
+				await sendMessage(
+					s.setup.modelId,
+					{
+						messages: [{ role: 'user', content: prompt }],
+						maxTokens: 1024,
+						temperature: 0.85
+					},
+					{
+						onToken: (token) => {
+							fullResponse += token;
+						},
+						onComplete: (_text, usage) => {
+							if (usage) {
+								this.totalUsage.inputTokens += usage.inputTokens;
+								this.totalUsage.outputTokens += usage.outputTokens;
+								this.callbacks.onUsageUpdate({ ...this.totalUsage });
+							}
+						},
+						onError: (err) => {
+							throw err;
+						}
+					},
+					this.abortController?.signal
+				);
+
+				const parsed = parseDiscussionResponse(fullResponse);
+				const persona = this.findPersonaByName(parsed.speaker, s.setup.personas);
+				const personaId = persona?.id ?? s.setup.personas[0].id;
+
+				session.addUtterance(personaId, parsed.content, round);
+				this.callbacks.onUtterance(personaId, parsed.content, round);
+				return;
+			} catch (err) {
+				lastError = err instanceof Error ? err : new Error(String(err));
+				console.warn(`[DiscussionEngine] Attempt ${attempt + 1}/${MAX_RETRIES + 1} failed:`, lastError.message);
+				if (attempt < MAX_RETRIES) {
+					await this.delay(2000);
 				}
-			},
-			this.abortController?.signal
-		);
+			}
+		}
 
-		const parsed = parseDiscussionResponse(fullResponse);
-		const persona = this.findPersonaByName(parsed.speaker, s.setup.personas);
-		const personaId = persona?.id ?? s.setup.personas[0].id;
-
-		session.addUtterance(personaId, parsed.content, round);
-		this.callbacks.onUtterance(personaId, parsed.content, round);
+		throw lastError ?? new Error('Failed to generate utterance');
 	}
 
 	private findPersonaByName(name: string, personas: Persona[]): Persona | undefined {

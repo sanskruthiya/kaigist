@@ -69,6 +69,17 @@ export const geminiProvider: LLMProviderAdapter = {
 
 					try {
 						const data = JSON.parse(jsonStr);
+
+						// Check for safety filter block
+						const finishReason = data.candidates?.[0]?.finishReason;
+						if (finishReason === 'SAFETY' || finishReason === 'RECITATION') {
+							const blockReason = data.candidates?.[0]?.safetyRatings
+								?.filter((r: { blocked?: boolean }) => r.blocked)
+								?.map((r: { category?: string }) => r.category)
+								?.join(', ') ?? finishReason;
+							throw new Error(`Gemini blocked response (${blockReason})`);
+						}
+
 						const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 						if (text) {
 							fullText += text;
@@ -78,7 +89,8 @@ export const geminiProvider: LLMProviderAdapter = {
 							usage.inputTokens = data.usageMetadata.promptTokenCount ?? 0;
 							usage.outputTokens = data.usageMetadata.candidatesTokenCount ?? 0;
 						}
-					} catch {
+					} catch (e) {
+						if (e instanceof Error && e.message.startsWith('Gemini blocked')) throw e;
 						// skip malformed JSON chunks
 					}
 				}

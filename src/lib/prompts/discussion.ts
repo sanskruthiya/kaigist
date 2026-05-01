@@ -147,17 +147,38 @@ export interface ParsedUtterance {
 }
 
 export function parseDiscussionResponse(raw: string): ParsedUtterance {
-	const jsonMatch = raw.match(/\{[\s\S]*\}/);
-	if (!jsonMatch) throw new Error('No JSON object found in response');
+	if (!raw || !raw.trim()) {
+		throw new Error('Empty response from LLM');
+	}
 
-	const parsed = JSON.parse(jsonMatch[0]);
+	// Strip markdown code blocks if present
+	let cleaned = raw.trim();
+	const codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
+	if (codeBlockMatch) {
+		cleaned = codeBlockMatch[1].trim();
+	}
+
+	const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+	if (!jsonMatch) {
+		const preview = raw.slice(0, 200).replace(/\n/g, '\\n');
+		throw new Error(`No JSON object found in response: "${preview}"`);
+	}
+
+	let parsed: Record<string, unknown>;
+	try {
+		parsed = JSON.parse(jsonMatch[0]);
+	} catch {
+		const preview = jsonMatch[0].slice(0, 200).replace(/\n/g, '\\n');
+		throw new Error(`Invalid JSON in response: "${preview}"`);
+	}
+
 	if (!parsed.speaker || !parsed.content) {
-		throw new Error('Missing speaker or content in response');
+		throw new Error(`Missing speaker or content: ${JSON.stringify(parsed).slice(0, 200)}`);
 	}
 
 	return {
-		speaker: parsed.speaker,
-		content: truncateUtterance(parsed.content)
+		speaker: String(parsed.speaker),
+		content: truncateUtterance(String(parsed.content))
 	};
 }
 
