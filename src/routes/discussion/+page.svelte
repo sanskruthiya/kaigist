@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { onMount, onDestroy, tick } from 'svelte';
-	import { Pause, Play, MessageSquare, FileText, Loader2, Mic, CheckCircle, AlertTriangle, PlusCircle } from 'lucide-svelte';
+	import { Pause, Play, MessageSquare, FileText, Loader2, Mic, CheckCircle, AlertTriangle, PlusCircle, Download } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { session, currentPersonas, currentUtterances, currentRound, maxRounds, sessionStatus } from '$lib/stores/session';
 	import { getModel } from '$lib/llm/models';
 	import { DiscussionEngine } from '$lib/engine/discussion-engine';
 	import type { LLMUsage } from '$lib/llm';
+	import { exportJSON } from '$lib/utils/export';
 
 	let engine: DiscussionEngine | null = null;
 	let usage = $state<LLMUsage>({ inputTokens: 0, outputTokens: 0 });
@@ -169,6 +170,10 @@
 						{$t('discussion_extend')}
 					</button>
 				{/if}
+				<button onclick={() => { if ($session) exportJSON($session); }} class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+					<Download size={16} />
+					{$t('discussion_export')}
+				</button>
 			</div>
 		</aside>
 
