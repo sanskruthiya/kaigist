@@ -5,6 +5,8 @@
 	import type { Persona } from '$lib/types/persona';
 	import { assignColor, generateId } from '$lib/types/persona';
 	import { buildPersonaProposalPrompt, parsePersonaResponse } from '$lib/prompts/persona-proposal';
+	import { session } from '$lib/stores/session';
+	import { goto } from '$app/navigation';
 
 	let currentStep = $state(1);
 	const totalSteps = 3;
@@ -365,13 +367,23 @@
 					<ArrowLeft size={16} />
 					{$t('btn_back')}
 				</button>
-				<a
-					href="/discussion"
+				<button
 					class="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+					onclick={() => {
+						session.init({
+							theme,
+							supplement,
+							personas,
+							rounds,
+							direction,
+							modelId: selectedModel
+						});
+						goto('/discussion');
+					}}
 				>
 					<Rocket size={18} />
 					{$t('setup_start_discussion')}
-				</a>
+				</button>
 			</div>
 		</div>
 	{/if}

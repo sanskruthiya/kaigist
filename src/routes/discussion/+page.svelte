@@ -1,58 +1,327 @@
 <script lang="ts">
-	import { Pause, Play, MessageSquare, FileText, Download } from 'lucide-svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
+	import { Pause, Play, MessageSquare, FileText, Loader2, Mic, CheckCircle, AlertTriangle, PlusCircle } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
+	import { goto } from '$app/navigation';
+	import { session, currentPersonas, currentUtterances, currentRound, maxRounds, sessionStatus } from '$lib/stores/session';
+	import { getModel } from '$lib/llm/models';
+	import { DiscussionEngine } from '$lib/engine/discussion-engine';
+	import type { LLMUsage } from '$lib/llm';
+
+	let engine: DiscussionEngine | null = null;
+	let usage = $state<LLMUsage>({ inputTokens: 0, outputTokens: 0 });
+	let errorMsg = $state('');
+	let showIntervene = $state(false);
+	let interveneText = $state('');
+	let interveneType = $state('add_topic');
+	let timelineEl: HTMLDivElement | undefined = $state();
+
+	const personaMap = $derived(() => {
+		const map = new Map<string, { name: string; color: string }>();
+		for (const p of $currentPersonas) {
+			map.set(p.id, { name: p.name, color: p.color });
+		}
+		return map;
+	});
+
+	function estimateCost(): string {
+		const s = $session;
+		if (!s) return '$0.00';
+		const model = getModel(s.setup.modelId);
+		if (!model) return '$0.00';
+		const cost =
+			(usage.inputTokens / 1_000_000) * model.inputCostPer1MTokens +
+			(usage.outputTokens / 1_000_000) * model.outputCostPer1MTokens;
+		return `$${cost.toFixed(4)}`;
+	}
+
+	function scrollToBottom() {
+		tick().then(() => {
+			if (timelineEl) {
+				timelineEl.scrollTop = timelineEl.scrollHeight;
+			}
+		});
+	}
+
+	function startEngine() {
+		if (!$session) return;
+		errorMsg = '';
+		engine = new DiscussionEngine({
+			onUtterance: () => { scrollToBottom(); },
+			onRoundStart: () => {},
+			onRoundEnd: () => {},
+			onComplete: () => {},
+			onError: (err) => { errorMsg = err.message; },
+			onUsageUpdate: (u) => { usage = u; }
+		});
+		engine.start();
+	}
+
+	function handlePause() {
+		engine?.pause();
+	}
+
+	function handleResume() {
+		if (engine) {
+			engine.resume();
+		} else {
+			startEngine();
+		}
+	}
+
+	function handleIntervene() {
+		if (!interveneText.trim()) return;
+		const prefix = interveneType === 'add_topic' ? '【論点追加】'
+			: interveneType === 'change_direction' ? '【方向転換】'
+			: interveneType === 'ask_persona' ? '【質問】'
+			: '【まとめ指示】';
+		engine?.intervene(`${prefix} ${interveneText.trim()}`);
+		interveneText = '';
+		showIntervene = false;
+		scrollToBottom();
+	}
+
+	function handleExtend() {
+		if (!$session) return;
+		session.extendRounds(3);
+		session.setStatus('running');
+		startEngine();
+	}
+
+	onMount(() => {
+		session.load();
+		if (!$session) {
+			goto('/setup');
+			return;
+		}
+		if ($session.status === 'running' || $session.status === 'setup') {
+			startEngine();
+		}
+	});
+
+	onDestroy(() => {
+		engine?.stop();
+	});
 </script>
 
-<div class="flex flex-col lg:flex-row h-[calc(100vh-57px)]">
-	<!-- Sidebar: Personas + Controls (desktop) -->
-	<aside class="hidden lg:flex flex-col w-64 border-r border-gray-200 bg-white p-4">
-		<h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Personas</h2>
-		<p class="text-sm text-gray-400">ペルソナパネルは Phase 4 で実装</p>
-
-		<div class="mt-auto space-y-2">
-			<button class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-				<Pause size={16} />
-				{$t('discussion_pause')}
-			</button>
-			<button class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-				<MessageSquare size={16} />
-				{$t('discussion_intervene')}
-			</button>
-			<button class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-				<FileText size={16} />
-				{$t('discussion_generate_notes')}
-			</button>
-			<button class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-				<Download size={16} />
-				{$t('discussion_export')}
-			</button>
+{#if !$session}
+	<div class="flex items-center justify-center h-[calc(100vh-57px)]">
+		<div class="text-center">
+			<p class="text-gray-500 mb-4">{$t('discussion_no_session')}</p>
+			<a href="/setup" class="text-blue-600 hover:underline">{$t('btn_back')}</a>
 		</div>
-	</aside>
+	</div>
+{:else}
+	<div class="flex flex-col lg:flex-row h-[calc(100vh-57px)]">
+		<!-- Sidebar -->
+		<aside class="hidden lg:flex flex-col w-64 border-r border-gray-200 bg-white">
+			<!-- Theme -->
+			<div class="p-4 border-b border-gray-100">
+				<h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{$session.setup.theme}</h2>
+			</div>
 
-	<!-- Main: Discussion Timeline -->
-	<div class="flex-1 flex flex-col">
-		<div class="flex-1 overflow-y-auto p-4 lg:p-8">
-			<div class="max-w-3xl mx-auto">
-				<div class="text-center py-16">
-					<p class="text-gray-400">議論タイムラインは Phase 4 で実装します。</p>
+			<!-- Personas -->
+			<div class="p-4 flex-1 overflow-y-auto">
+				<h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{$t('discussion_personas')}</h3>
+				<div class="space-y-2">
+					{#each $currentPersonas as persona}
+						<div class="flex items-center gap-2">
+							<div
+								class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+								style="background-color: {persona.color}"
+							>
+								{persona.name.charAt(0)}
+							</div>
+							<div class="min-w-0">
+								<p class="text-sm font-medium text-gray-800 truncate">{persona.name}</p>
+								<p class="text-xs text-gray-400 truncate">{persona.stance}</p>
+							</div>
+						</div>
+					{/each}
 				</div>
+			</div>
+
+			<!-- Controls -->
+			<div class="p-4 border-t border-gray-100 space-y-2">
+				<h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{$t('discussion_controls')}</h3>
+				{#if $sessionStatus === 'running'}
+					<button onclick={handlePause} class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+						<Pause size={16} />
+						{$t('discussion_pause')}
+					</button>
+				{:else if $sessionStatus === 'paused'}
+					<button onclick={handleResume} class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+						<Play size={16} />
+						{$t('discussion_resume')}
+					</button>
+					<button onclick={() => (showIntervene = true)} class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+						<MessageSquare size={16} />
+						{$t('discussion_intervene')}
+					</button>
+				{/if}
+				{#if $sessionStatus === 'completed'}
+					<button onclick={() => goto('/notes')} class="w-full flex items-center gap-2 px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
+						<FileText size={16} />
+						{$t('discussion_generate_notes')}
+					</button>
+					<button onclick={handleExtend} class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+						<PlusCircle size={16} />
+						{$t('discussion_extend')}
+					</button>
+				{/if}
+			</div>
+		</aside>
+
+		<!-- Main Timeline -->
+		<div class="flex-1 flex flex-col">
+			<div class="flex-1 overflow-y-auto p-4 lg:p-8" bind:this={timelineEl}>
+				<div class="max-w-3xl mx-auto space-y-4">
+					{#each $currentUtterances as utterance (utterance.id)}
+						{@const isFacilitator = utterance.speakerPersonaId === '__facilitator__'}
+						{@const info = personaMap().get(utterance.speakerPersonaId)}
+
+						{#if isFacilitator}
+							<!-- Facilitator comment -->
+							<div class="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+								<div class="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white shrink-0">
+									<Mic size={14} />
+								</div>
+								<div>
+									<p class="text-xs font-semibold text-amber-700 mb-1">{$t('discussion_facilitator')}</p>
+									<p class="text-sm text-amber-900">{utterance.content}</p>
+								</div>
+							</div>
+						{:else}
+							<!-- Persona utterance -->
+							<div class="flex items-start gap-3">
+								<div
+									class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+									style="background-color: {info?.color ?? '#6B7280'}"
+								>
+									{info?.name?.charAt(0) ?? '?'}
+								</div>
+								<div class="flex-1 min-w-0">
+									<div class="flex items-center gap-2 mb-1">
+										<span class="text-sm font-semibold" style="color: {info?.color ?? '#6B7280'}">{info?.name ?? '?'}</span>
+										<span class="text-xs text-gray-300">R{utterance.round}</span>
+									</div>
+									<p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{utterance.content}</p>
+								</div>
+							</div>
+						{/if}
+					{/each}
+
+					{#if $sessionStatus === 'running'}
+						<div class="flex items-center gap-2 text-gray-400 py-4">
+							<Loader2 size={16} class="animate-spin" />
+							<span class="text-sm">{$t('status_round_progress')}...</span>
+						</div>
+					{/if}
+
+					{#if $sessionStatus === 'completed'}
+						<div class="flex items-center gap-2 text-green-600 py-4 justify-center">
+							<CheckCircle size={16} />
+							<span class="text-sm font-medium">{$t('discussion_completed_msg')}</span>
+						</div>
+					{/if}
+
+					{#if errorMsg}
+						<div class="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+							<AlertTriangle size={16} />
+							<span>{errorMsg}</span>
+						</div>
+					{/if}
+				</div>
+			</div>
+
+			<!-- Status bar -->
+			<div class="flex items-center justify-between px-4 py-2 bg-white border-t border-gray-200 text-xs text-gray-500">
+				<span>
+					{$t('discussion_round')} {$currentRound}/{$maxRounds}
+					{#if $sessionStatus === 'running'}— {$t('status_round_progress')}{/if}
+					{#if $sessionStatus === 'paused'}— {$t('discussion_pause')}{/if}
+					{#if $sessionStatus === 'completed'}— {$t('status_completed')}{/if}
+				</span>
+				<span>{$t('status_tokens')}: {(usage.inputTokens + usage.outputTokens).toLocaleString()} / {$t('status_cost')}: {estimateCost()}</span>
 			</div>
 		</div>
 
-		<!-- Status bar -->
-		<div class="flex items-center justify-between px-4 py-2 bg-white border-t border-gray-200 text-xs text-gray-500">
-			<span>{$t('discussion_round')} 0/5 — {$t('status_round_progress')}</span>
-			<span>{$t('status_tokens')}: 0 / {$t('status_cost')}: $0.00</span>
+		<!-- Mobile floating controls -->
+		<div class="lg:hidden fixed bottom-14 right-4 flex flex-col gap-2">
+			{#if $sessionStatus === 'running'}
+				<button onclick={handlePause} class="p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors">
+					<Pause size={20} />
+				</button>
+			{:else if $sessionStatus === 'paused'}
+				<button onclick={handleResume} class="p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors">
+					<Play size={20} />
+				</button>
+				<button onclick={() => (showIntervene = true)} class="p-3 bg-white text-gray-700 rounded-full shadow-lg border hover:bg-gray-50 transition-colors">
+					<MessageSquare size={20} />
+				</button>
+			{:else if $sessionStatus === 'completed'}
+				<button onclick={() => goto('/notes')} class="p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors">
+					<FileText size={20} />
+				</button>
+			{/if}
 		</div>
 	</div>
+{/if}
 
-	<!-- Mobile: Floating controls -->
-	<div class="lg:hidden fixed bottom-4 right-4 flex flex-col gap-2">
-		<button class="p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors">
-			<Pause size={20} />
-		</button>
-		<button class="p-3 bg-white text-gray-700 rounded-full shadow-lg border hover:bg-gray-50 transition-colors">
-			<MessageSquare size={20} />
-		</button>
+<!-- Intervention modal -->
+{#if showIntervene}
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+		role="dialog"
+		aria-modal="true"
+		tabindex="-1"
+		onclick={(e) => { if (e.target === e.currentTarget) showIntervene = false; }}
+		onkeydown={(e) => { if (e.key === 'Escape') showIntervene = false; }}
+	>
+		<div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
+			<h2 class="text-lg font-bold mb-4">{$t('intervene_title')}</h2>
+
+			<div class="space-y-2 mb-4">
+				<label class="flex items-center gap-2 text-sm">
+					<input type="radio" bind:group={interveneType} value="add_topic" class="text-blue-600" />
+					{$t('intervene_add_topic')}
+				</label>
+				<label class="flex items-center gap-2 text-sm">
+					<input type="radio" bind:group={interveneType} value="change_direction" class="text-blue-600" />
+					{$t('intervene_change_direction')}
+				</label>
+				<label class="flex items-center gap-2 text-sm">
+					<input type="radio" bind:group={interveneType} value="ask_persona" class="text-blue-600" />
+					{$t('intervene_ask_persona')}
+				</label>
+				<label class="flex items-center gap-2 text-sm">
+					<input type="radio" bind:group={interveneType} value="summarize" class="text-blue-600" />
+					{$t('intervene_summarize')}
+				</label>
+			</div>
+
+			<textarea
+				bind:value={interveneText}
+				rows={3}
+				class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none text-sm"
+				placeholder={$t('intervene_placeholder')}
+			></textarea>
+
+			<div class="flex justify-end gap-2 mt-4">
+				<button
+					onclick={() => (showIntervene = false)}
+					class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+				>
+					{$t('intervene_cancel')}
+				</button>
+				<button
+					onclick={handleIntervene}
+					disabled={!interveneText.trim()}
+					class="px-4 py-2 text-sm font-medium rounded-lg transition-colors {interveneText.trim() ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}"
+				>
+					{$t('intervene_send')}
+				</button>
+			</div>
+		</div>
 	</div>
-</div>
+{/if}
