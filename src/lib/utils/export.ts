@@ -1,15 +1,13 @@
 import type { Session } from '$lib/types/session';
 
-function sanitizeFilename(text: string): string {
-	return text.replace(/[^a-zA-Z0-9\u3000-\u9FFF\u4E00-\u9FFF]/g, '_').slice(0, 30);
+function formatTimestamp(): string {
+	const d = new Date();
+	const pad = (n: number) => String(n).padStart(2, '0');
+	return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
 }
 
-function formatDate(): string {
-	return new Date().toISOString().slice(0, 10);
-}
-
-function buildFilename(theme: string, ext: string): string {
-	return `kaigist-${sanitizeFilename(theme)}-${formatDate()}.${ext}`;
+function buildFilename(ext: string): string {
+	return `kaigist-${formatTimestamp()}.${ext}`;
 }
 
 function downloadFile(content: string, filename: string, mimeType: string) {
@@ -31,7 +29,7 @@ export function exportJSON(session: Session) {
 		...session
 	};
 	const json = JSON.stringify(data, null, 2);
-	downloadFile(json, buildFilename(session.setup.theme, 'json'), 'application/json');
+	downloadFile(json, buildFilename('json'), 'application/json');
 }
 
 export function exportMarkdown(session: Session, meetingNotes: string) {
@@ -54,7 +52,7 @@ export function exportMarkdown(session: Session, meetingNotes: string) {
 		}
 	}
 
-	downloadFile(md, buildFilename(session.setup.theme, 'md'), 'text/markdown');
+	downloadFile(md, buildFilename('md'), 'text/markdown');
 }
 
 export async function copyToClipboard(text: string): Promise<boolean> {

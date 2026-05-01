@@ -32,18 +32,26 @@
 	}
 </script>
 
-<div class="flex flex-col items-center justify-center min-h-[calc(100vh-57px)] px-4">
-	<div class="text-center mb-10">
+<div class="relative flex flex-col items-center justify-center min-h-[calc(100vh-57px)] px-4 bg-amber-50 overflow-hidden">
+	<!-- Floating cubes -->
+	<div class="cube cube-1"></div>
+	<div class="cube cube-2"></div>
+	<div class="cube cube-3"></div>
+	<div class="cube cube-4"></div>
+
+	<div class="relative z-10 text-center mb-10">
 		<img
 			src="/images/kAIgistLogo.webp"
-			alt="Kaigist"
-			class="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-6 drop-shadow-lg"
+			alt="kAIgist"
+			class="w-32 h-32 sm:w-40 sm:h-40 mx-auto mb-6 rounded-3xl shadow-xl"
 		/>
-		<h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-3">{$t('app_name')}</h1>
+		<h1 class="mb-3 select-none">
+			<span class="text-5xl sm:text-6xl font-light text-gray-700 tracking-tight">k</span><span class="text-5xl sm:text-6xl font-semibold text-amber-500">AI</span><span class="text-5xl sm:text-6xl font-light text-gray-700 tracking-tight">gist</span>
+		</h1>
 		<p class="text-lg text-gray-500 max-w-sm mx-auto">{$t('app_tagline')}</p>
 	</div>
 
-	<div class="flex flex-col gap-4 w-full max-w-sm">
+	<div class="relative z-10 flex flex-col gap-4 w-full max-w-sm">
 		<a
 			href="/setup"
 			class="flex items-center justify-center gap-3 px-6 py-4 bg-amber-400 hover:bg-amber-500 text-gray-900 font-medium rounded-xl shadow-lg hover:shadow-xl transition-all"
@@ -54,7 +62,7 @@
 
 		<button
 			onclick={() => fileInput?.click()}
-			class="flex items-center justify-center gap-3 px-6 py-4 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-xl border border-gray-200 shadow-sm hover:shadow transition-all"
+			class="flex items-center justify-center gap-3 px-6 py-4 bg-white/80 backdrop-blur-sm hover:bg-white text-gray-700 font-medium rounded-xl border border-gray-200 shadow-sm hover:shadow transition-all"
 		>
 			<FolderOpen size={22} />
 			<div class="text-left">
@@ -78,3 +86,57 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	.cube {
+		position: absolute;
+		border-radius: 18%;
+		opacity: 0.18;
+		will-change: transform;
+	}
+
+	.cube-1 {
+		width: 120px;
+		height: 120px;
+		background: #f59e0b;
+		top: 10%;
+		left: 8%;
+		animation: spin-slow 18s linear infinite;
+	}
+
+	.cube-2 {
+		width: 90px;
+		height: 90px;
+		background: #ef4444;
+		top: 18%;
+		right: 10%;
+		animation: spin-slow 24s linear infinite reverse;
+	}
+
+	.cube-3 {
+		width: 100px;
+		height: 100px;
+		background: #3b82f6;
+		bottom: 14%;
+		left: 12%;
+		animation: spin-slow 20s linear infinite;
+	}
+
+	.cube-4 {
+		width: 80px;
+		height: 80px;
+		background: #10b981;
+		bottom: 20%;
+		right: 8%;
+		animation: spin-slow 22s linear infinite reverse;
+	}
+
+	@keyframes spin-slow {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
+	}
+</style>

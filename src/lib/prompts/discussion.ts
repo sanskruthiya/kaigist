@@ -97,10 +97,11 @@ ${facilitator}
 ${history || '（まだ発言なし）'}
 
 要件:
-- まだこのラウンドで発言していないペルソナから1名を選び、そのペルソナとして発言を生成すること
-- 発言は150〜400字程度にすること
-- 他のペルソナの発言に対する反応・反論・深掘りを含めること
-- キャラクターの専門性と立場を反映した発言にすること
+- まだこのラウンド内及び直前で発言していないペルソナから1名を選び、そのペルソナの立場として発言を生成すること
+- 発言は50〜200字程度にすること
+- 直前の発言内容の繰り返しや単純な否定は避け、具体的なアイデアや建設的な議論を意識すること
+- 他のペルソナの発言に対する新しい視点、具体案、または発展的な問いかけを含めること
+- 現在のラウンドが全体の前半（1〜2割）なら議論を広げ、後半（8割以降）なら議論をまとめたりリスト化する流れを意識すること
 - 必ず以下のJSON形式のみを出力し、それ以外のテキストは含めないこと
 
 出力形式:
@@ -128,10 +129,11 @@ Discussion so far:
 ${history || '(No statements yet)'}
 
 Requirements:
-- Choose one persona who has NOT spoken in this round yet and generate their statement
-- Keep the statement between 150-400 characters
-- Include reactions, rebuttals, or deeper exploration of other personas' statements
-- Reflect the character's expertise and stance
+- Choose one persona who has NOT spoken in this round or immediately before, and generate their statement from that persona's perspective
+- Keep the statement between 50-200 characters
+- Avoid repeating or simply negating the previous statement; focus on concrete ideas and constructive discussion
+- Include new perspectives, concrete proposals, or thought-provoking questions in response to other personas' statements
+- If current round is in the first 20-40% of total rounds, broaden the discussion; if in the final 20%, focus on summarizing or listing key points
 - Output ONLY the following JSON format with no additional text
 
 Output format:

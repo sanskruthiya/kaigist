@@ -52,11 +52,10 @@ ${history}
 以下の構成でMarkdown形式の議事メモを作成してください:
 1. 議論の要約（3〜5文）
 2. 主要な論点
-3. 各参加者の主な主張
-4. 合意事項
-5. 対立点
-6. 残された課題
+3. 合意事項
+4. 残された論点
 
+注意: 議事メモ内に個々のペルソナの名前は記載せず、意見や論点を中心にまとめてください。
 Markdown形式のみを出力し、それ以外のテキストは含めないでください。`;
 	}
 
@@ -73,10 +72,9 @@ ${history}
 Create meeting notes in Markdown format with the following sections:
 1. Summary (3-5 sentences)
 2. Key Topics
-3. Main Arguments by Participant
-4. Points of Agreement
-5. Points of Disagreement
-6. Remaining Issues
+3. Points of Agreement
+4. Remaining Issues
 
+Note: Do not include individual persona names in the notes. Focus on summarizing opinions and key points.
 Output ONLY the Markdown content with no additional text.`;
 }

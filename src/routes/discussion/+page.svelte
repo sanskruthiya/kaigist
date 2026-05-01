@@ -8,6 +8,7 @@
 	import { DiscussionEngine } from '$lib/engine/discussion-engine';
 	import type { LLMUsage } from '$lib/llm';
 	import { exportJSON } from '$lib/utils/export';
+	import TypingText from '$lib/components/TypingText.svelte';
 
 	let engine: DiscussionEngine | null = null;
 	let usage = $state<LLMUsage>({ inputTokens: 0, outputTokens: 0 });
@@ -17,6 +18,7 @@
 	let interveneType = $state('add_topic');
 	let timelineEl: HTMLDivElement | undefined = $state();
 	let showDrawer = $state(false);
+	let typingUtteranceId = $state<string | null>(null);
 
 	const personaMap = $derived(() => {
 		const map = new Map<string, { name: string; color: string }>();
@@ -49,7 +51,20 @@
 		if (!$session) return;
 		errorMsg = '';
 		engine = new DiscussionEngine({
-			onUtterance: () => { scrollToBottom(); },
+			onUtterance: (personaId, content, round) => {
+				scrollToBottom();
+				// Get the latest utterance ID
+				const utterances = $currentUtterances;
+				const latestUtterance = utterances[utterances.length - 1];
+				if (latestUtterance) {
+					typingUtteranceId = latestUtterance.id;
+					// Clear typing state after animation completes (estimate: 30ms per char)
+					const typingDuration = content.length * 30 + 100;
+					setTimeout(() => {
+						typingUtteranceId = null;
+					}, typingDuration);
+				}
+			},
 			onRoundStart: () => {},
 			onRoundEnd: () => {},
 			onComplete: () => {},
@@ -204,7 +219,13 @@
 								</div>
 								<div>
 									<p class="text-xs font-semibold text-amber-700 mb-1">{$t('discussion_facilitator')}</p>
-									<p class="text-sm text-amber-900">{utterance.content}</p>
+									<p class="text-sm text-amber-900">
+										{#if typingUtteranceId === utterance.id}
+											<TypingText text={utterance.content} speed={30} />
+										{:else}
+											{utterance.content}
+										{/if}
+									</p>
 								</div>
 							</div>
 						{:else}
@@ -221,7 +242,13 @@
 										<span class="text-sm font-semibold" style="color: {info?.color ?? '#6B7280'}">{info?.name ?? '?'}</span>
 										<span class="text-xs text-gray-300">R{utterance.round}</span>
 									</div>
-									<p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{utterance.content}</p>
+									<p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+										{#if typingUtteranceId === utterance.id}
+											<TypingText text={utterance.content} speed={30} />
+										{:else}
+											{utterance.content}
+										{/if}
+									</p>
 								</div>
 							</div>
 						{/if}
