@@ -142,7 +142,7 @@
 		{#each Array(totalSteps) as _, i}
 			<div
 				class="h-1 flex-1 rounded-full transition-colors {i < currentStep
-					? 'bg-blue-500'
+					? 'bg-amber-400'
 					: 'bg-gray-200'}"
 			></div>
 		{/each}
@@ -160,7 +160,7 @@
 					type="text"
 					maxlength={100}
 					bind:value={theme}
-					class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+					class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none transition-all"
 					placeholder={$t('setup_theme_placeholder')}
 				/>
 			</div>
@@ -173,7 +173,7 @@
 					rows={4}
 					maxlength={500}
 					bind:value={supplement}
-					class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none"
+					class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none transition-all resize-none"
 					placeholder={$t('setup_supplement_placeholder')}
 				></textarea>
 			</div>
@@ -185,7 +185,7 @@
 				<select
 					id="model"
 					bind:value={selectedModel}
-					class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+					class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none transition-all"
 				>
 					{#each LLM_PROVIDERS as provider}
 						<optgroup label={provider.name}>
@@ -206,7 +206,7 @@
 
 			<button
 				disabled={!canProceedStep1()}
-				class="w-full flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg transition-colors {canProceedStep1() ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}"
+				class="w-full flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg transition-colors {canProceedStep1() ? 'bg-amber-400 hover:bg-amber-500 text-gray-900' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}"
 				onclick={handleStep1Submit}
 			>
 				<Sparkles size={18} />
@@ -229,7 +229,7 @@
 					<p class="text-xs text-red-500">{proposalError}</p>
 				</div>
 				<button
-					class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+					class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-amber-400 hover:bg-amber-500 text-gray-900 font-medium rounded-lg transition-colors"
 					onclick={proposePersonas}
 				>
 					<RefreshCw size={16} />
@@ -260,7 +260,7 @@
 							<div class="flex items-center gap-1 shrink-0">
 								<button
 									onclick={() => openEditModal(persona)}
-									class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+									class="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
 									title={$t('setup_edit_persona')}
 								>
 									<Pencil size={14} />
@@ -313,7 +313,7 @@
 					</button>
 					<button
 						disabled={!canProceedStep2()}
-						class="flex items-center gap-1 px-6 py-2 text-sm font-medium rounded-lg transition-colors {canProceedStep2() ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}"
+						class="flex items-center gap-1 px-6 py-2 text-sm font-medium rounded-lg transition-colors {canProceedStep2() ? 'bg-amber-400 hover:bg-amber-500 text-gray-900' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}"
 						onclick={() => (currentStep = 3)}
 					>
 						{$t('btn_next')}
@@ -338,7 +338,7 @@
 				<select
 					id="rounds"
 					bind:value={rounds}
-					class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+					class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none transition-all"
 				>
 					{#each Array.from({ length: 10 }, (_, i) => i + 1) as n}
 						<option value={n}>{n}</option>
@@ -354,7 +354,7 @@
 					id="direction"
 					rows={3}
 					bind:value={direction}
-					class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none"
+					class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none transition-all resize-none"
 					placeholder={$t('setup_direction_placeholder')}
 				></textarea>
 			</div>
@@ -368,7 +368,7 @@
 					{$t('btn_back')}
 				</button>
 				<button
-					class="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+					class="flex items-center gap-2 px-6 py-3 bg-amber-400 hover:bg-amber-500 text-gray-900 font-medium rounded-lg transition-colors"
 					onclick={() => {
 						session.init({
 							theme,
@@ -415,23 +415,23 @@
 			<div class="space-y-4">
 				<div>
 					<label for="p-name" class="block text-xs font-medium text-gray-600 mb-1">{$t('setup_persona_name')}</label>
-					<input id="p-name" type="text" bind:value={editingPersona.name} class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+					<input id="p-name" type="text" bind:value={editingPersona.name} class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none" />
 				</div>
 				<div>
 					<label for="p-age" class="block text-xs font-medium text-gray-600 mb-1">{$t('setup_persona_age_group')}</label>
-					<input id="p-age" type="text" bind:value={editingPersona.ageGroup} class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="30代" />
+					<input id="p-age" type="text" bind:value={editingPersona.ageGroup} class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none" placeholder="30代" />
 				</div>
 				<div>
 					<label for="p-exp" class="block text-xs font-medium text-gray-600 mb-1">{$t('setup_persona_expertise')}</label>
-					<input id="p-exp" type="text" bind:value={editingPersona.expertise} class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+					<input id="p-exp" type="text" bind:value={editingPersona.expertise} class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none" />
 				</div>
 				<div>
 					<label for="p-stance" class="block text-xs font-medium text-gray-600 mb-1">{$t('setup_persona_stance')}</label>
-					<input id="p-stance" type="text" bind:value={editingPersona.stance} class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+					<input id="p-stance" type="text" bind:value={editingPersona.stance} class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none" />
 				</div>
 				<div>
 					<label for="p-personality" class="block text-xs font-medium text-gray-600 mb-1">{$t('setup_persona_personality')}</label>
-					<input id="p-personality" type="text" bind:value={editingPersona.personality} class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+					<input id="p-personality" type="text" bind:value={editingPersona.personality} class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none" />
 				</div>
 
 				<div class="flex items-center gap-3 pt-2">
@@ -453,7 +453,7 @@
 				<button
 					onclick={savePersona}
 					disabled={!editingPersona.name.trim()}
-					class="px-4 py-2 text-sm font-medium rounded-lg transition-colors {editingPersona.name.trim() ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}"
+					class="px-4 py-2 text-sm font-medium rounded-lg transition-colors {editingPersona.name.trim() ? 'bg-amber-400 hover:bg-amber-500 text-gray-900' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}"
 				>
 					{$t('btn_save')}
 				</button>

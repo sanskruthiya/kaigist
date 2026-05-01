@@ -33,15 +33,20 @@
 </script>
 
 <div class="flex flex-col items-center justify-center min-h-[calc(100vh-57px)] px-4">
-	<div class="text-center mb-12">
+	<div class="text-center mb-10">
+		<img
+			src="/images/kAIgistLogo.webp"
+			alt="Kaigist"
+			class="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-6 drop-shadow-lg"
+		/>
 		<h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-3">{$t('app_name')}</h1>
-		<p class="text-lg text-gray-500">{$t('app_tagline')}</p>
+		<p class="text-lg text-gray-500 max-w-sm mx-auto">{$t('app_tagline')}</p>
 	</div>
 
 	<div class="flex flex-col gap-4 w-full max-w-sm">
 		<a
 			href="/setup"
-			class="flex items-center justify-center gap-3 px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all"
+			class="flex items-center justify-center gap-3 px-6 py-4 bg-amber-400 hover:bg-amber-500 text-gray-900 font-medium rounded-xl shadow-lg hover:shadow-xl transition-all"
 		>
 			<Rocket size={22} />
 			{$t('home_new_discussion')}

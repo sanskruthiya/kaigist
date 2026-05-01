@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy, tick } from 'svelte';
-	import { Pause, Play, MessageSquare, FileText, Loader2, Mic, CheckCircle, AlertTriangle, PlusCircle, Download } from 'lucide-svelte';
+	import { Pause, Play, MessageSquare, FileText, Loader2, Mic, CheckCircle, AlertTriangle, PlusCircle, Download, Users, X } from 'lucide-svelte';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { session, currentPersonas, currentUtterances, currentRound, maxRounds, sessionStatus } from '$lib/stores/session';
@@ -16,6 +16,7 @@
 	let interveneText = $state('');
 	let interveneType = $state('add_topic');
 	let timelineEl: HTMLDivElement | undefined = $state();
+	let showDrawer = $state(false);
 
 	const personaMap = $derived(() => {
 		const map = new Map<string, { name: string; color: string }>();
@@ -109,12 +110,22 @@
 	<div class="flex items-center justify-center h-[calc(100vh-57px)]">
 		<div class="text-center">
 			<p class="text-gray-500 mb-4">{$t('discussion_no_session')}</p>
-			<a href="/setup" class="text-blue-600 hover:underline">{$t('btn_back')}</a>
+			<a href="/setup" class="text-amber-600 hover:underline">{$t('btn_back')}</a>
 		</div>
 	</div>
 {:else}
 	<div class="flex flex-col lg:flex-row h-[calc(100vh-57px)]">
-		<!-- Sidebar -->
+		<!-- Mobile top bar -->
+		<div class="lg:hidden flex items-center justify-between px-3 py-2 bg-white border-b border-gray-200">
+			<button onclick={() => (showDrawer = true)} class="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900">
+				<Users size={16} />
+				{$t('discussion_personas')}
+			</button>
+			<span class="text-xs text-gray-500 truncate max-w-[50%]">{$session.setup.theme}</span>
+			<span class="text-xs text-gray-400">R{$currentRound}/{$maxRounds}</span>
+		</div>
+
+		<!-- Sidebar (desktop) -->
 		<aside class="hidden lg:flex flex-col w-64 border-r border-gray-200 bg-white">
 			<!-- Theme -->
 			<div class="p-4 border-b border-gray-100">
@@ -161,7 +172,7 @@
 					</button>
 				{/if}
 				{#if $sessionStatus === 'completed'}
-					<button onclick={() => goto('/notes')} class="w-full flex items-center gap-2 px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
+					<button onclick={() => goto('/notes')} class="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 rounded-lg transition-colors">
 						<FileText size={16} />
 						{$t('discussion_generate_notes')}
 					</button>
@@ -252,25 +263,85 @@
 		</div>
 
 		<!-- Mobile floating controls -->
-		<div class="lg:hidden fixed bottom-14 right-4 flex flex-col gap-2">
+		<div class="lg:hidden fixed bottom-16 right-4 flex flex-col gap-2 z-30">
 			{#if $sessionStatus === 'running'}
-				<button onclick={handlePause} class="p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors">
+				<button onclick={handlePause} class="p-3 bg-amber-400 text-gray-900 rounded-full shadow-lg hover:bg-amber-500 transition-colors">
 					<Pause size={20} />
 				</button>
 			{:else if $sessionStatus === 'paused'}
-				<button onclick={handleResume} class="p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors">
+				<button onclick={handleResume} class="p-3 bg-amber-400 text-gray-900 rounded-full shadow-lg hover:bg-amber-500 transition-colors">
 					<Play size={20} />
 				</button>
 				<button onclick={() => (showIntervene = true)} class="p-3 bg-white text-gray-700 rounded-full shadow-lg border hover:bg-gray-50 transition-colors">
 					<MessageSquare size={20} />
 				</button>
 			{:else if $sessionStatus === 'completed'}
-				<button onclick={() => goto('/notes')} class="p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors">
+				<button onclick={() => goto('/notes')} class="p-3 bg-amber-400 text-gray-900 rounded-full shadow-lg hover:bg-amber-500 transition-colors">
 					<FileText size={20} />
 				</button>
 			{/if}
 		</div>
 	</div>
+
+	<!-- Mobile drawer -->
+	{#if showDrawer}
+		<div
+			class="lg:hidden fixed inset-0 z-40 flex"
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+			onclick={(e) => { if (e.target === e.currentTarget) showDrawer = false; }}
+			onkeydown={(e) => { if (e.key === 'Escape') showDrawer = false; }}
+		>
+			<div class="w-72 max-w-[80vw] bg-white shadow-2xl flex flex-col h-full">
+				<div class="flex items-center justify-between p-4 border-b border-gray-100">
+					<span class="text-sm font-semibold text-gray-700">{$t('discussion_personas')}</span>
+					<button onclick={() => (showDrawer = false)} class="p-1 text-gray-400 hover:text-gray-600">
+						<X size={18} />
+					</button>
+				</div>
+				<div class="p-4 flex-1 overflow-y-auto space-y-3">
+					{#each $currentPersonas as persona}
+						<div class="flex items-center gap-2">
+							<div
+								class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+								style="background-color: {persona.color}"
+							>
+								{persona.name.charAt(0)}
+							</div>
+							<div class="min-w-0">
+								<p class="text-sm font-medium text-gray-800 truncate">{persona.name}</p>
+								<p class="text-xs text-gray-400 truncate">{persona.expertise} · {persona.stance}</p>
+							</div>
+						</div>
+					{/each}
+				</div>
+				<div class="p-4 border-t border-gray-100 space-y-2">
+					{#if $sessionStatus === 'running'}
+						<button onclick={() => { handlePause(); showDrawer = false; }} class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+							<Pause size={16} /> {$t('discussion_pause')}
+						</button>
+					{:else if $sessionStatus === 'paused'}
+						<button onclick={() => { handleResume(); showDrawer = false; }} class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+							<Play size={16} /> {$t('discussion_resume')}
+						</button>
+						<button onclick={() => { showDrawer = false; showIntervene = true; }} class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+							<MessageSquare size={16} /> {$t('discussion_intervene')}
+						</button>
+					{/if}
+					{#if $sessionStatus === 'completed'}
+						<button onclick={() => goto('/notes')} class="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 rounded-lg">
+							<FileText size={16} /> {$t('discussion_generate_notes')}
+						</button>
+					{/if}
+					<button onclick={() => { if ($session) exportJSON($session); }} class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
+						<Download size={16} /> {$t('discussion_export')}
+					</button>
+				</div>
+			</div>
+			<button class="flex-1 bg-black/30 cursor-default" aria-label="Close" onclick={() => (showDrawer = false)}></button>
+		</div>
+	{/if}
 {/if}
 
 <!-- Intervention modal -->
@@ -288,19 +359,19 @@
 
 			<div class="space-y-2 mb-4">
 				<label class="flex items-center gap-2 text-sm">
-					<input type="radio" bind:group={interveneType} value="add_topic" class="text-blue-600" />
+					<input type="radio" bind:group={interveneType} value="add_topic" class="text-amber-500 accent-amber-500" />
 					{$t('intervene_add_topic')}
 				</label>
 				<label class="flex items-center gap-2 text-sm">
-					<input type="radio" bind:group={interveneType} value="change_direction" class="text-blue-600" />
+					<input type="radio" bind:group={interveneType} value="change_direction" class="text-amber-500 accent-amber-500" />
 					{$t('intervene_change_direction')}
 				</label>
 				<label class="flex items-center gap-2 text-sm">
-					<input type="radio" bind:group={interveneType} value="ask_persona" class="text-blue-600" />
+					<input type="radio" bind:group={interveneType} value="ask_persona" class="text-amber-500 accent-amber-500" />
 					{$t('intervene_ask_persona')}
 				</label>
 				<label class="flex items-center gap-2 text-sm">
-					<input type="radio" bind:group={interveneType} value="summarize" class="text-blue-600" />
+					<input type="radio" bind:group={interveneType} value="summarize" class="text-amber-500 accent-amber-500" />
 					{$t('intervene_summarize')}
 				</label>
 			</div>
@@ -308,7 +379,7 @@
 			<textarea
 				bind:value={interveneText}
 				rows={3}
-				class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none text-sm"
+				class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none resize-none text-sm"
 				placeholder={$t('intervene_placeholder')}
 			></textarea>
 
@@ -322,7 +393,7 @@
 				<button
 					onclick={handleIntervene}
 					disabled={!interveneText.trim()}
-					class="px-4 py-2 text-sm font-medium rounded-lg transition-colors {interveneText.trim() ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}"
+					class="px-4 py-2 text-sm font-medium rounded-lg transition-colors {interveneText.trim() ? 'bg-amber-400 hover:bg-amber-500 text-gray-900' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}"
 				>
 					{$t('intervene_send')}
 				</button>

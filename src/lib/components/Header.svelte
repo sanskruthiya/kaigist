@@ -16,10 +16,11 @@
 	}
 </script>
 
-<header class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shadow-sm">
-	<a href="/" class="flex items-center gap-2">
-		<span class="text-xl font-bold text-gray-900">{$t('app_name')}</span>
-		<span class="hidden sm:inline text-sm text-gray-500">{$t('app_tagline')}</span>
+<header class="flex items-center justify-between px-3 sm:px-4 py-2 bg-white border-b border-gray-200 shadow-sm">
+	<a href="/" class="flex items-center gap-2 shrink-0">
+		<img src="/images/kAIgistLogo.webp" alt="Kaigist" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg" />
+		<span class="text-lg sm:text-xl font-bold text-gray-900">{$t('app_name')}</span>
+		<span class="hidden md:inline text-sm text-gray-500">{$t('app_tagline')}</span>
 	</a>
 
 	<div class="flex items-center gap-2">
@@ -48,6 +49,7 @@
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
 		role="dialog"
 		aria-modal="true"
+		tabindex="-1"
 		onclick={(e) => { if (e.target === e.currentTarget) showSettings = false; }}
 		onkeydown={(e) => { if (e.key === 'Escape') showSettings = false; }}
 	>
@@ -88,7 +90,7 @@
 									type={showKey[provider.id] ? 'text' : 'password'}
 									value={$apiKeys[provider.id] ?? ''}
 									oninput={(e) => handleSave(provider.id, e.currentTarget.value)}
-									class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm font-mono"
+									class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none transition-all text-sm font-mono"
 									placeholder={$t('settings_api_key_placeholder')}
 								/>
 								<button

@@ -85,16 +85,16 @@
 {:else}
 	<div class="max-w-3xl mx-auto px-4 py-8">
 		<!-- Header -->
-		<div class="flex items-center justify-between mb-8">
+		<div class="flex items-center justify-between mb-6 sm:mb-8 gap-2">
 			<a
 				href="/discussion"
-				class="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+				class="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors shrink-0"
 			>
 				<ArrowLeft size={16} />
-				{$t('notes_back')}
+				<span class="hidden sm:inline">{$t('notes_back')}</span>
 			</a>
 			{#if notes && !isGenerating}
-				<div class="flex items-center gap-2">
+				<div class="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
 					<button
 						onclick={handleCopy}
 						class="flex items-center gap-1 px-3 py-2 text-sm rounded-lg border transition-colors {copied ? 'text-green-600 border-green-300 bg-green-50' : 'text-gray-600 hover:bg-gray-100'}"
@@ -125,7 +125,7 @@
 		</div>
 
 		<!-- Content -->
-		<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+		<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-8">
 			{#if isGenerating && !notes}
 				<div class="flex flex-col items-center justify-center py-16 text-gray-500">
 					<Loader2 size={32} class="animate-spin mb-4" />
@@ -138,7 +138,7 @@
 				</div>
 				<button
 					onclick={generateNotes}
-					class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+					class="px-4 py-2 text-sm bg-amber-400 hover:bg-amber-500 text-gray-900 rounded-lg transition-colors"
 				>
 					{$t('btn_retry')}
 				</button>
